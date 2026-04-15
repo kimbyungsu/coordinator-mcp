@@ -1,5 +1,10 @@
-# Multi-Agent Coordination MCP — 설계 문서 v0.7
+# Multi-Agent Coordination MCP — 설계 문서 v0.8
 
+> v0.7 → v0.8 주요 변경
+> - Section 7 RULE 7 추가: Verifier 탐색 범위 3단계 + 탐색 종료 조건 (5개 충족 시 전체 스캔 불필요)
+> - Section 15 보강: Verifier→Implementer handoff 대칭 고정 (verdict_id + fix_base_revision, 불변조건 6~9)
+>   Coordinator가 양방향 handoff를 독립적으로 snapshot 고정
+>
 > v0.6.1 → v0.7 주요 변경
 > - Section 15: 제출/검증 대상 고정 메커니즘 (submission_id + base_revision + CAS)
 > - Section 16: MVP 범위 명시 (v1 = 2-agent 공식 지원, 3-agent 이상 비지원)
@@ -515,6 +520,40 @@ PASS를 유보할 이유를 억지로 만들어내지 않는다.
 - **BLOCKER**: 현재 방향으로 진행 불가 → Coordinator에 ESCALATED 요청
 
 confidence는 참고 지표로만 사용. 단독 교착 트리거로 사용 불가.
+
+### RULE 7: 검증 탐색 범위 규칙 [HARD]
+기본적으로 Coordinator가 제공한 artifact bundle만 검증 대상이다.
+매 턴 repo 전체를 탐색하지 않는다.
+
+```
+[단계 1: 기본 검증 — 항상 수행]
+- artifact bundle의 changed_files + patch
+- test_outputs
+- open_obligations 관련 파일
+
+[단계 2: 인접 확장 — 아래 조건 중 하나라도 해당 시]
+- public interface / API 변경
+- config / schema / migration 변경
+- shared util / 공통 모듈 변경
+- side_effects에 인접 파일 기록 존재
+- preflight mismatch 존재
+
+[단계 3: 전체 확장 — 명시적 트리거 있을 때만]
+- 제출물과 실제 snapshot diff 불일치 의심
+- changed_files 누락 의심
+- scope 위반 의심
+- 동일 파일에서 반복 불일치 이력 (2회 이상)
+- 단계 1~2로 판정 불가한 경우
+
+[탐색 종료 조건 — 5개 모두 충족 시 추가 탐색 없이 판정 가능]
+  [ ] changed_files가 artifact bundle의 snapshot diff와 일치
+  [ ] patch가 base_revision 대비 완전
+  [ ] test output artifact 존재 + ran=true
+  [ ] scope 위반 없음 (changed_files 전체 allowed/adjacent)
+  [ ] obligation mismatch 없음
+→ 5개 충족 시 전체 repo 탐색 없이도 PASS 가능
+→ "혹시 빠진 게 있지 않을까"는 이 5개가 충족되면 종료해야 할 불안이다
+```
 
 ---
 
@@ -1037,7 +1076,7 @@ writer_lock = {
 5. 이미 처리된 submission_id는 재처리하지 않는다 (멱등성 보장)
 ```
 
-### Coordinator artifact bundle 구성 (Verifier에게 전달)
+### Coordinator artifact bundle 구성 (Implementer → Verifier 전달)
 ```
 {
   "submission_id": "<고유 ID>",
@@ -1048,6 +1087,32 @@ writer_lock = {
   "submitted_at": "<타임스탬프>"
 }
 ```
+
+> Coordinator는 Implementer 자진 신고 diff를 그대로 전달하지 않는다.
+> 실제 snapshot 비교(git diff 또는 동등한 수단)로 independent하게 생성하여 전달한다.
+
+### Verifier → Implementer handoff 고정 (대칭 원칙)
+
+FIX_REQUIRED / BLOCKER 판정도 동일한 고정 메커니즘이 적용된다.
+
+**추가 불변 조건:**
+```
+6. FIX_REQUIRED/BLOCKER 판정은 고유한 verdict_id를 가진다
+
+7. verdict는 Verifier가 분석한 base_revision에 결합된다
+   - "어느 snapshot 기준으로 이슈를 찾았는가"가 고정됨
+
+8. Coordinator는 다음 구현 사이클의 fix_base_revision을 명시적으로 고정한다
+   - fix_base_revision = Verifier가 분석한 base_revision (원칙)
+   - workspace가 그 이후 변경됐다면 → RESTORE 또는 새 cycle 시작
+
+9. Implementer는 fix_base_revision과 다른 workspace에서 수정 시작 불가
+   - 불일치 감지 시 Coordinator가 차단 + PAUSED 전환
+```
+
+> 불변 조건 1~5는 Implementer → Verifier handoff를 고정한다.
+> 불변 조건 6~9는 Verifier → Implementer handoff를 대칭으로 고정한다.
+> 두 방향 모두 Coordinator가 독립적으로 snapshot을 고정하며, 어느 에이전트의 자진 신고도 ground truth가 아니다.
 
 > 스냅샷 고정(증거 원본성)과 멱등성(중복 전이 방지)은 같은 뿌리에서 나온다.
 > submission_id + base_revision + expected_state 세 필드가 하나의 메커니즘으로 두 문제를 해결한다.

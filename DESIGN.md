@@ -1,5 +1,11 @@
-# Multi-Agent Coordination MCP — 설계 문서 v0.3
+# Multi-Agent Coordination MCP — 설계 문서 v0.4
 
+> v0.3 → v0.4 주요 변경
+> - "active" 집합 개념 정의 추가 (proposed+accepted+in_progress)
+> - 8장 협의 종료 조건: high/blocking → resolved/ESCALATED만 (rejected 제거)
+> - PASS 판정식: active high/medium/blocking 모두 없어야 함을 명문화
+> - verification_cycles 증가 위치 단일화: 5.1은 Section 5.3 참조, 9장은 주석 처리
+>
 > v0.2 → v0.3 주요 변경
 > - severity 정책 통일 (4.2 ↔ 8장 모순 제거): low만 deferred 허용, medium은 해결/rejected만
 > - PASS와 deferred low issue 관계 명문화 (task_pass_condition)
@@ -134,6 +140,7 @@ Memento MCP (장기 기억)              Coordinator MCP (단기 작업층)
 - [ ] 마지막 task의 최종 판정이 PASS
 - [ ] acceptance_criteria 항목 전부 verified 상태
 - [ ] open_obligations 중 active 상태 항목 없음
+  > **active** = proposed / accepted / in_progress 상태의 합집합. resolved / deferred / rejected는 active 아님.
 - [ ] `project_done_requires_all_deferred_resolved=true`인 경우: deferred 항목도 전부 resolved 또는 rejected
 - [ ] 사용자의 명시적 완료 승인 (선택 사항, 설정에 따라)
 
@@ -231,7 +238,7 @@ rejected      → Implementer 반박 근거 제시 + Verifier 수용
       3. Ledger에 proposed 상태로 등록
       4. draft_id → canonical issue_id 내부 매핑 생성 (Phase D 종료 후 폐기)
       5. Negotiation Packet 구성 (canonical issue_id 기준)
-      6. verification_cycles_current_task += 1 (VERIFYING → 판정 완료 시점)
+      6. verification_cycles_current_task += 1 (단일 source of truth — Section 5.3)
 
   Phase D: 협의 (FIX_REQUIRED 시 진입)
     - Coordinator가 Negotiation Packet을 Implementer에게 전달
@@ -432,7 +439,12 @@ adjacent_files_allowed: 수정 가능하되 changes[]에 scope="adjacent"로 명
 ```
 
 판정 기준:
-- **PASS**: 모든 blocking 항목 resolved + acceptance_criteria 항목 충족 + `allow_deferred_low_on_pass` 정책에 따라 low deferred 허용
+- **PASS**: 아래 조건 전부 충족
+  - active high obligation 없음 (resolved 또는 rejected만)
+  - active medium obligation 없음 (resolved 또는 rejected만)
+  - active blocking obligation 없음
+  - acceptance_criteria 항목 충족
+  - low deferred는 `allow_deferred_low_on_pass` 정책에 따라 허용
 - **FIX_REQUIRED**: 수정 가능한 문제 존재, 재구현 후 재검증 필요
 - **BLOCKER**: 현재 방향으로 진행 불가 → Coordinator에 ESCALATED 요청
 
@@ -506,7 +518,8 @@ low:
 ### 협의 종료 조건
 ```
 정상 종료:
-  모든 high/blocking → accepted 또는 rejected (합의)
+  모든 high/blocking → resolved 또는 ESCALATED (타협/rejected 불가)
+  모든 medium → resolved 또는 rejected (합의)
   remaining issues 전부 deferred (low만)
 
 비정상 종료 (ESCALATED):
@@ -552,7 +565,7 @@ IMPLEMENTING
   → 구현 요약 + diff + test_evidence 제출 완료: VERIFYING
 
 VERIFYING
-  → Verifier 판정 완료 → verification_cycles_current_task += 1
+  → Verifier 판정 완료 → verification_cycles_current_task += 1 (Section 5.3 참조)
   → PASS + 완료 체크리스트 미충족 (PROJECT): NEXT_TASK
   → PASS + 완료 체크리스트 충족 (PROJECT): DONE
   → PASS (SINGLE): DONE
@@ -930,6 +943,6 @@ writer_lock = {
 
 ---
 
-*v0.3 — 2026-04-15*
-*v0.2 → v0.3: 8개 피드백 + issue draft → canonical ID 변환 시점 명시*
-*다음 단계: v0.3 검토 → v0.4 (SQLite 스키마 + MCP 도구 목록)*
+*v0.4 — 2026-04-15*
+*v0.3 → v0.4: active 정의, high/blocking 충돌 수정, PASS 판정식 명문화, cycle 증가 위치 단일화*
+*다음 단계: v0.4 검토 → SQLite 스키마 + MCP 도구 목록*

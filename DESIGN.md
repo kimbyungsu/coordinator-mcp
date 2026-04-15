@@ -1235,8 +1235,10 @@ FIX_REQUIRED / BLOCKER 판정도 동일한 고정 메커니즘이 적용된다.
 
 ---
 
-*v0.7 — 2026-04-16*
-*v0.6.1 → v0.7: Section 15 제출/검증 대상 고정 메커니즘 추가, Section 16 MVP 범위 명시, Section 17 미결 항목 Batch 1/2/3 재구조화*
-*v0.5 → v0.6: Phase A0 추가 (Implementer preflight), RULE 4 preflight 필드 추가*
-*v0.6 → v0.6.1: Phase A0 active 범위 통일 (accepted/in_progress only)*
+*v0.9 — 2026-04-16*
+*v0.8 → v0.9: Section 0 추가 — Shared Situation Layer (설계 철학 기반층)*
+*v0.7 → v0.8: Section 7 RULE 7 추가 (Verifier 탐색 범위 3단계), Section 15 양방향 handoff 대칭 고정*
+*v0.6.1 → v0.7: Section 15 제출/검증 대상 고정 메커니즘, Section 16 MVP 범위, Section 17 Batch 재구조화*
+*v0.5 → v0.6: Phase A0 추가, RULE 4 preflight 필드 추가*
+*v0.6 → v0.6.1: Phase A0 active 범위 통일*
 *실제 주입 원문은 PROMPT_CONTRACT.md 참조*

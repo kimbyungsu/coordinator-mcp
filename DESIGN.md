@@ -1,5 +1,10 @@
-# Multi-Agent Coordination MCP — 설계 문서 v0.6.1
+# Multi-Agent Coordination MCP — 설계 문서 v0.7
 
+> v0.6.1 → v0.7 주요 변경
+> - Section 15: 제출/검증 대상 고정 메커니즘 (submission_id + base_revision + CAS)
+> - Section 16: MVP 범위 명시 (v1 = 2-agent 공식 지원, 3-agent 이상 비지원)
+> - Section 17: 미결 항목 Batch 1/2/3 재구조화 (기존 Section 15 대체)
+>
 > v0.6 → v0.6.1 주요 변경
 > - Phase A0 active 범위 통일: proposed 제거, accepted/in_progress만 명시
 >   (Phase A 시점 proposed 존재 = Coordinator 오류로 정의)
@@ -1009,21 +1014,99 @@ writer_lock = {
 
 ---
 
-## 15. 미결 설계 항목 (v0.6.1에서 결정 필요)
+## 15. 제출/검증 대상 고정 메커니즘
 
-1. **에이전트 등록/신원 확인**: agent_id 발급 방식, 인증 방법
-2. **폴링 vs 웹소켓**: 에이전트가 자기 차례를 감지하는 방법
-3. **diff 전달 방식**: MCP 메시지로 인라인 전달 vs 파일 경로 참조
-4. **컨텍스트 압축 알고리즘**: 무엇을 남기고 버릴지 판단 기준
-5. **ACK 타임아웃 값**: 에이전트 응답 대기 최대 시간
-6. **SQLite 스키마**: 실제 테이블 정의 (tasks / messages / obligations / locks / checkpoints)
-7. **MCP 도구 목록**: 에이전트가 호출하는 실제 도구 이름 + 파라미터
-8. **docker-compose 구성**: Coordinator MCP 서비스 정의
+> 구현 세부 명세(컬럼명, endpoint 등)는 구현 시 확정한다.
+> 이 섹션은 흔들리면 안 되는 설계 불변 조건만 정의한다.
+
+### 불변 조건
+
+```
+1. 모든 제출(submission)은 고유한 submission_id를 가진다
+
+2. 모든 제출은 제출 시점 워크스페이스 상태를 고정하는
+   base_revision (tree hash 또는 snapshot_id)을 포함한다
+
+3. Verifier가 검증하는 대상은 제출 시점에 고정된 snapshot 기준이다
+   - live workspace 직접 접근 금지
+   - Coordinator가 제공하는 artifact bundle (patch + changed file list + test outputs + base_revision) 기준으로만 검증
+
+4. 모든 상태 전이는 expected_state를 포함한 CAS(compare-and-swap) 방식으로만 실행된다
+   - 전이 요청의 expected_state ≠ 현재 실제 state → 전이 거부
+
+5. 이미 처리된 submission_id는 재처리하지 않는다 (멱등성 보장)
+```
+
+### Coordinator artifact bundle 구성 (Verifier에게 전달)
+```
+{
+  "submission_id": "<고유 ID>",
+  "base_revision": "<제출 시점 snapshot 식별자>",
+  "changed_files": ["<파일 목록>"],
+  "patch": "<diff 전문 또는 참조>",
+  "test_outputs": "<stdout/stderr artifact 참조>",
+  "submitted_at": "<타임스탬프>"
+}
+```
+
+> 스냅샷 고정(증거 원본성)과 멱등성(중복 전이 방지)은 같은 뿌리에서 나온다.
+> submission_id + base_revision + expected_state 세 필드가 하나의 메커니즘으로 두 문제를 해결한다.
 
 ---
 
-*v0.6.1 — 2026-04-16*
+## 16. MVP 범위
+
+```
+[v1 공식 지원]
+- 2-agent 구조: Implementer / Verifier 쌍
+- 2-agent 구조: Proposer / Critic 쌍 (DISCUSSION 모드)
+
+[v1 명시적 비지원]
+- 3-agent 이상 동시 참여
+- 동일 역할 병렬 실행 (Implementer 2명 동시 등)
+- 동적 역할 추가 (런타임 중 역할 변경)
+
+[비지원 이유]
+현재 설계 전체(Issue Ledger, Writer Lock, 상태 기계, preflight)가
+2-agent 쌍을 전제로 최적화되어 있다.
+3-agent 이상은 별도 설계 검토가 필요하다.
+```
+
+---
+
+## 17. 미결 설계 항목
+
+### Batch 1 — 코드 첫 커밋 전 필수
+| 항목 | 내용 |
+|------|------|
+| MCP 도구 목록 | 에이전트가 호출하는 실제 도구 이름 + 파라미터 (MCP_API.md로 분리) |
+| SQLite 스키마 | tasks / messages / obligations / locks / checkpoints / submissions 테이블 (SCHEMA.md로 분리) |
+| 동적 주입 파라미터 생성 로직 | Coordinator가 {open_obligations}, {diff_ref} 등을 어떻게 조립하는가 |
+| submission_id 발급 규칙 | 고유성 보장 방식 (UUID v4 등) |
+| base_revision 추출 방식 | git tree hash vs 별도 snapshot 메커니즘 |
+
+### Batch 2 — 첫 사이클 실행 후
+| 항목 | 내용 |
+|------|------|
+| E2E 검증 계획 | 최소 1회 구현→검증→FIX_REQUIRED→재구현→PASS 사이클 (VALIDATION.md) |
+| 운영자 UX / 관찰성 | 현재 상태, PAUSED/ESCALATED 원인, resume/cancel/rebaseline 흐름 (UX_FLOW.md) |
+| 에이전트 신원 확인 | agent_id 발급 방식, 인증 방법 |
+| ACK 타임아웃 값 | 에이전트 응답 대기 최대 시간 |
+
+### Batch 3 — v1.0 전
+| 항목 | 내용 |
+|------|------|
+| 요구사항 변경 프로토콜 | 중간 변경 시 obligations 무효화/이관, rebaseline 흐름 (CHANGE_PROTOCOL.md) |
+| 역할별 도구 권한 모델 | Implementer/Verifier별 tool allowlist, shell/destructive command 제한 |
+| 폴링 vs 웹소켓 | 에이전트 차례 감지 방식 최종 결정 |
+| diff 전달 방식 | MCP 메시지 인라인 vs 파일 경로 참조 |
+| 컨텍스트 압축 알고리즘 | 무엇을 남기고 버릴지 판단 기준 |
+| docker-compose 구성 | Coordinator MCP 서비스 정의 |
+
+---
+
+*v0.7 — 2026-04-16*
+*v0.6.1 → v0.7: Section 15 제출/검증 대상 고정 메커니즘 추가, Section 16 MVP 범위 명시, Section 17 미결 항목 Batch 1/2/3 재구조화*
 *v0.5 → v0.6: Phase A0 추가 (Implementer preflight), RULE 4 preflight 필드 추가*
 *v0.6 → v0.6.1: Phase A0 active 범위 통일 (accepted/in_progress only)*
 *실제 주입 원문은 PROMPT_CONTRACT.md 참조*
-*다음 단계: SQLite 스키마 + MCP 도구 목록*

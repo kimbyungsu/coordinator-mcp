@@ -29,6 +29,12 @@
 
 ### 1.2 매 구현 턴 시작 시 주입 (동적)
 ```
+[구현 시작 전 — 반드시 먼저 수행: 상태 정합성 자기점검]
+1. 아래 open_obligations 목록을 직접 열거하고 active 항목을 확인하십시오
+2. 지난 턴에서 "resolved"로 표시한 항목이 실제로 처리됐는지 대조하십시오
+3. mismatch가 있으면 구현을 시작하기 전에 명시하십시오
+mismatch 없으면 한 줄("preflight 이상 없음")로 통과합니다
+
 [현재 작업 컨텍스트]
 프로젝트 방향: {project_brief}
 작업 범위: {task_scope.allowed_write_scope} + 인접 파일: {task_scope.adjacent_files_allowed}
@@ -39,6 +45,7 @@
 {next_required_action}
 
 [반드시 포함해야 할 제출 항목]
+- preflight: open_obligations 재열거 + 지난 턴 주장 대조 결과
 - changes[]: 수정된 파일, 타입, diff 참조
 - test_evidence: ran 여부, 실행 명령, 결과 요약 (ran=false면 이유 필수)
 - obligation_updates[]: 각 open obligation의 현재 처리 상태
@@ -278,6 +285,7 @@ Verifier 출력에서 아래 항목을 Coordinator가 자동 체크한다.
 | 버전 | 날짜 | 변경 내용 |
 |------|------|-----------|
 | v0.1 | 2026-04-16 | 초기 작성 — DESIGN.md v0.4.1 기준 주입 원문 분리 |
+| v0.3 | 2026-04-16 | Section 1.2 수정 — Implementer 턴 시작 시 preflight 자기점검 단계 추가 |
 | v0.2 | 2026-04-16 | Section 5 추가 — Coordinator 사람 중계 출력 절대 금지 규칙 |
 
 *다음 업데이트: SQLite 스키마 + MCP 도구 목록 확정 후 동적 주입 파라미터 구체화*

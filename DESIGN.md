@@ -1,5 +1,10 @@
-# Multi-Agent Coordination MCP — 설계 문서 v0.4
+# Multi-Agent Coordination MCP — 설계 문서 v0.6
 
+> v0.5 → v0.6 주요 변경
+> - Phase A0 추가: Implementer 턴 시작 시 상태 정합성 자기점검 (Preflight) [HARD]
+>   - open_obligations 재열거, 지난 턴 주장 vs 실제 상태 대조, mismatch 구현 전 명시
+> - RULE 4 제출 포맷에 preflight 필드 추가
+>
 > v0.4.1 → v0.5 주요 변경
 > - Verifier HARD RULES에 RULE 6 추가: 과검증 방지 + PASS 허용 의무 + 검증 우선순위
 > - Section 8 협의 루프에 재지적 금지 규칙 추가
@@ -215,6 +220,16 @@ rejected      → Implementer 반박 근거 제시 + Verifier 수용
 ### 5.1 분업 모드 턴 단계
 ```
 [Turn N]
+  Phase A0: 상태 정합성 자기점검 (Preflight) [HARD]
+    구현 시작 전 Implementer가 반드시 수행:
+      1. open_obligations 재열거 — active(proposed/accepted/in_progress) 항목 명시
+      2. 지난 턴 obligation_updates 주장 vs 현재 실제 상태 대조
+         - "resolved"로 표시한 항목이 실제로 처리됐는가?
+         - mismatch 발견 시 구현 전에 명시
+      3. 이번 수정 범위가 open_obligations 중 누락하는 항목 없는지 확인
+    mismatch 없으면 한 줄로 통과. mismatch 있으면 구현 전에 드러내고 처리.
+    결과는 제출 포맷의 preflight 필드에 포함 (Section 6 RULE 4).
+
   Phase A: 구현
     Coordinator → Implementer 주입:
       - project_brief (고정)
@@ -315,6 +330,18 @@ task가 변경될 때 verification_cycles_current_task 리셋
 {
   "turn": "<번호>",
   "role": "implementer",
+  "preflight": {
+    "open_obligations_relisted": ["<obligation_id>"],
+    "last_turn_mismatch": [
+      {
+        "obligation_id": "<issue_id>",
+        "claimed_status": "resolved | in_progress",
+        "current_assessment": "confirmed | mismatch | unclear",
+        "reason": "<불일치 사유 또는 확인 근거>"
+      }
+    ],
+    "all_clear": true
+  },
   "task_summary": "<무엇을 구현했는가 — 1~3문장>",
   "changes": [
     {

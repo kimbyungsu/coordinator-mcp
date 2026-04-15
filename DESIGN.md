@@ -1,5 +1,11 @@
 # Multi-Agent Coordination MCP — 설계 문서 v0.4
 
+> v0.4.1 → v0.5 주요 변경
+> - Verifier HARD RULES에 RULE 6 추가: 과검증 방지 + PASS 허용 의무 + 검증 우선순위
+> - Section 8 협의 루프에 재지적 금지 규칙 추가
+> - Section 12 토론 모드에 재지적 금지 규칙 추가
+> - PROMPT_CONTRACT.md 신규 생성 (주입 원문 분리)
+>
 > v0.3 → v0.4 주요 변경
 > - "active" 집합 개념 정의 추가 (proposed+accepted+in_progress)
 > - 8장 협의 종료 조건: high/blocking → resolved/ESCALATED만 (rejected 제거)
@@ -403,6 +409,29 @@ adjacent_files_allowed: 수정 가능하되 changes[]에 scope="adjacent"로 명
 - 새 설계 제안 시 기존 구현과 반드시 대조
 - 이미 있는 기능을 무시한 채 추상 설계만 덧씌우지 않는다
 
+### RULE 6: 과검증 방지 + PASS 허용 의무 [HARD]
+검증의 목적은 문제 개수를 늘리는 것이 아니다.
+현재 diff와 수정안을 기준으로, **다음 턴으로 넘기면 안 되는 실질적 미해결 문제가 있는지** 확인하는 것이다.
+
+**검증 우선순위 (이 순서로만 검토):**
+1. 정확성 — 로직 오류, 명세 불일치
+2. 누적 의무 이행 — open_obligations 실제 처리 여부
+3. acceptance_criteria 충족 여부
+4. 회귀 위험 — 기존 기능 파손 가능성
+5. 범위 위반 — scope 외 수정
+6. 그 외 사소한 항목
+
+**절대 금지:**
+- 사소한 문구 차이, 비본질적 형식 문제 지적
+- resolved / rejected / deferred 처리된 항목 재지적
+- 이전 턴에서 합의된 항목 반복 제기
+- 새로운 근거 없이 동일 주장 재제기
+- 억지 쟁점 생성
+
+**PASS 허용 의무:**
+우선순위 1~5에 해당하는 실질적 미해결 문제가 없으면 PASS를 내야 한다.
+PASS를 유보할 이유를 억지로 만들어내지 않는다.
+
 ### RULE 5: 판정 형식 고정 + issue_drafts 제출 [HARD]
 감상문, 권장사항 나열, "더 고려해보세요" 표현 금지.
 **draft_id는 Verifier 내부 임시 식별자다. 반드시 포함해야 하며, Coordinator가 canonical issue_id로 교체 후 Phase D에서 외부 노출 금지.**
@@ -497,6 +526,15 @@ low:
   → resolved, rejected, deferred 모두 허용
   → deferred 조건: 양쪽 동의 + Coordinator 승인 + task_pass_condition 정책 준수
 ```
+
+### 재지적 금지 규칙 (Verifier + Implementer 공통)
+협의 루프에서 다음 행동은 금지된다:
+- 이미 resolved / rejected / deferred 처리된 issue_id 재제기
+- 이전 턴 대비 변화가 없는 주장 반복
+- 새 근거(diff, 코드 위치, 테스트 결과) 없이 동일 주장 재제기
+- 이미 agreed_actions에 기록된 합의 사항 번복
+
+위반 감지 시 Coordinator가 해당 발언을 무효 처리하고 경고를 발행한다.
 
 ### 반박 형식 (Implementer → Coordinator)
 ```json
@@ -855,6 +893,14 @@ stable=false (동기화 금지):
 }
 ```
 
+### 토론 모드 재지적 금지 규칙
+- 이전 턴에서 proposer가 반영 완료하거나 합의된 항목은 재제기 금지
+- Critic은 변경분(changes_this_turn)에만 반응한다. 이전 턴 전체 입장을 다시 비판하지 않는다
+- 새로운 근거 없이 동일 disagreement 항목을 반복 제기 금지
+- 이미 동의한 항목을 severity 상향 조정하거나 새 조건을 추가해 번복 금지
+
+위반 감지 시 Coordinator가 해당 발언을 무효 처리한다.
+
 ### 토론 종료 조건
 **정상 합의 (체크리스트 기반, confidence 값은 참고 지표로만 사용):**
 - critic.consensus_ready == true
@@ -944,6 +990,7 @@ writer_lock = {
 
 ---
 
-*v0.4.1 — 2026-04-16*
-*v0.4 → v0.4.1: Section 7 PASS의 high rejected 잔재 제거, Section 8 ESCALATED를 비정상 종료로 분리, Section 15 버전 표기 수정*
+*v0.5 — 2026-04-16*
+*v0.4.1 → v0.5: Verifier RULE 6 과검증 방지 추가, 협의/토론 재지적 금지 규칙 추가*
+*실제 주입 원문은 PROMPT_CONTRACT.md 참조*
 *다음 단계: SQLite 스키마 + MCP 도구 목록*

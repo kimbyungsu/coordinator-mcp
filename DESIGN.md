@@ -1,5 +1,11 @@
-# Multi-Agent Coordination MCP — 설계 문서 v0.8
+# Multi-Agent Coordination MCP — 설계 문서 v0.9
 
+> v0.8 → v0.9 주요 변경
+> - Section 0 추가: 설계 철학 — 공통 상황 레이어 (Shared Situation Layer)
+>   역할 규칙보다 앞서는 기반 원칙. 독립 에이전트 간 동일 상황 공유가 1번.
+>   Shared Situation Object 필드 정의, 역할 렌즈 원칙, 위반 감지 기준 포함.
+> - CLAUDE.md: 완료·충분 과신 금지 규칙 추가
+>
 > v0.7 → v0.8 주요 변경
 > - Section 7 RULE 7 추가: Verifier 탐색 범위 3단계 + 탐색 종료 조건 (5개 충족 시 전체 스캔 불필요)
 > - Section 15 보강: Verifier→Implementer handoff 대칭 고정 (verdict_id + fix_base_revision, 불변조건 6~9)
@@ -42,6 +48,65 @@
 > - verification cycle 증가 시점 정의
 > - Issue draft → canonical ID 변환 시점 명시 (Phase C 종료 후 Phase D 진입 전)
 > - draft_id Phase D부터 외부 노출 금지
+
+---
+
+## 0. 설계 철학 — 공통 상황 레이어 (Shared Situation Layer)
+
+> 이 섹션은 모든 역할 규칙(Section 6~14)보다 앞에 온다.
+> 아래 원칙을 위반하는 역할 규칙은 이 섹션 기준으로 교정한다.
+
+### 핵심 원칙
+
+이 MCP의 목적은 **성격이 다른 에이전트들을 동일하게 고정된 상황 위에 올려, 각자 독립된 관점으로 부딪히게 만드는 것**이다.
+
+- Implementer / Verifier / Proposer / Critic은 역할 렌즈이지 상하관계가 아니다
+- Verifier는 Implementer의 팔다리가 아닌 독립 행위자다
+- 어느 에이전트의 자진 신고도 ground truth가 아니다
+- Coordinator가 독립적으로 고정한 situation object가 ground truth다
+
+### Shared Situation Object
+
+모든 에이전트는 Coordinator가 고정한 동일한 situation object를 먼저 공유한다.
+역할별 규칙은 이 공통 상황을 어떤 관점으로 읽는가의 차이일 뿐이다.
+
+```json
+{
+  "situation_id": "<고유 ID>",
+  "mode": "PROJECT | SINGLE | DISCUSSION",
+  "project_brief": "<프로젝트 방향성>",
+  "current_task": "<현재 작업 설명>",
+  "acceptance_criteria": ["<완료 조건>"],
+  "constraints": ["<제약 조건>"],
+  "base_revision": "<현재 기준 snapshot>",
+  "open_obligations": ["..."],
+  "agreed_actions": ["..."],
+  "unresolved_points": ["..."],
+  "budget_state": {},
+  "next_required_action": "<다음 행동>"
+}
+```
+
+### 역할 렌즈 원칙
+
+| 역할 | 같은 상황을 읽는 관점 |
+|------|----------------------|
+| Implementer | 어떻게 만들 것인가 |
+| Verifier | 무엇이 잘못될 수 있는가 |
+| Proposer | 어떤 방향이 맞는가 |
+| Critic | 어떤 가정이 틀렸는가 |
+
+### 이 원칙 위반 감지 기준
+
+다음 중 하나라도 해당하면 설계가 이 원칙을 위반한 것이다:
+
+```
+[ ] Verifier가 Implementer 제출물만 보고 판단 — situation 독립 접근 불가
+[ ] 한 에이전트의 자진 신고가 다른 에이전트의 시작점이 됨
+[ ] Coordinator가 situation을 독립 고정하지 않고 자진 신고를 그대로 전달
+[ ] 역할 간 정보 비대칭 — 한쪽은 전체 상황, 다른 쪽은 요약만
+[ ] 한 역할이 다른 역할의 하위 처리 단계처럼 동작
+```
 
 ---
 

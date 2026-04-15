@@ -144,7 +144,7 @@ Turn Dispatcher가 이 공백을 메운다.
 
 3. 차례 디스패치
    - Runtime-A: 해당 LLM API 호출 + 컨텍스트 주입
-   - Runtime-B: 해당 에이전트 polling endpoint에 신호 / 에이전트가 자체 감지
+   - Runtime-B: 에이전트가 Coordinator MCP를 주기적으로 폴링하여 자기 차례를 자체 감지
 
 4. 응답 수집
    - 결과를 Coordinator MCP에 기록
@@ -172,8 +172,8 @@ loop:
   if runtime == "A":
     response = call_llm_api(next_role.model, context)
   elif runtime == "B":
-    signal_agent(next_role.agent_id)
-    response = wait_for_agent_response(next_role.agent_id)
+    # 에이전트가 자율 폴링 루프에서 coordinator.get_my_task()를 호출하여 자기 차례를 감지
+    response = wait_for_agent_polling_response(next_role.agent_id)
 
   coordinator.submit_response(next_role, response)
   coordinator.advance_state()
@@ -216,6 +216,7 @@ Phase 4: UX
 
 ---
 
-*v0.2 — 2026-04-16*
-*변경: Section 1에서 설계 후퇴 감지 규칙(개발자 가이드라인) 분리 → PROJECT_PRINCIPLES.md로 이동*
+*v0.3 — 2026-04-16*
+*변경: Option B 표현 통일 — signal_agent() 제거, 에이전트 자율 폴링 자체 감지 방식으로 일관화*
+*v0.2 — 2026-04-16: Section 1에서 설계 후퇴 감지 규칙(개발자 가이드라인) 분리 → PROJECT_PRINCIPLES.md로 이동*
 *다음 단계: Option B 전제 조건 검증 → Runtime 확정 → Phase 1 구현 시작*

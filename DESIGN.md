@@ -1009,7 +1009,7 @@ writer_lock = {
 
 ---
 
-## 15. 미결 설계 항목 (v0.5에서 결정 필요)
+## 15. 미결 설계 항목 (v0.6.1에서 결정 필요)
 
 1. **에이전트 등록/신원 확인**: agent_id 발급 방식, 인증 방법
 2. **폴링 vs 웹소켓**: 에이전트가 자기 차례를 감지하는 방법
@@ -1022,7 +1022,8 @@ writer_lock = {
 
 ---
 
-*v0.5 — 2026-04-16*
-*v0.4.1 → v0.5: Verifier RULE 6 과검증 방지 추가, 협의/토론 재지적 금지 규칙 추가*
+*v0.6.1 — 2026-04-16*
+*v0.5 → v0.6: Phase A0 추가 (Implementer preflight), RULE 4 preflight 필드 추가*
+*v0.6 → v0.6.1: Phase A0 active 범위 통일 (accepted/in_progress only)*
 *실제 주입 원문은 PROMPT_CONTRACT.md 참조*
 *다음 단계: SQLite 스키마 + MCP 도구 목록*

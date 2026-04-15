@@ -139,7 +139,7 @@ Memento MCP (장기 기억)              Coordinator MCP (단기 작업층)
         ↓
 [Implementer: 작업 수행]
         ↓
-[구현 요약 + diff + test_evidence → Verifier 전달]
+[구현 요약 + diff + test_evidence → Coordinator 제출 → Verifier 전달]
         ↓
 [Verifier: 보수적 검증 + 구조화 판정]
         ↓

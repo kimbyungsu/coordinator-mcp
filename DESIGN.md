@@ -1,5 +1,11 @@
-# Multi-Agent Coordination MCP — 설계 문서 v0.9
+# Multi-Agent Coordination MCP — 설계 문서 v0.10
 
+> v0.9 → v0.10 주요 변경
+> - Phase A0: 실행 계획 + 검증 계획 수립 단계 추가 (3단계 구조)
+> - RULE 4 제출 포맷: execution_plan, verification_plan(required_checks, regression_targets, omitted_checks_reason) 필드 추가
+> - Phase C: Verifier 주입에 preflight.execution_plan + verification_plan 포함
+> - Verifier RULE 6: 우선순위 4번에 검증 계획 이행 확인 추가
+>
 > v0.8 → v0.9 주요 변경
 > - Section 0 추가: 설계 철학 — 공통 상황 레이어 (Shared Situation Layer)
 >   역할 규칙보다 앞서는 기반 원칙. 독립 에이전트 간 동일 상황 공유가 1번.
@@ -299,15 +305,29 @@ rejected      → Implementer 반박 근거 제시 + Verifier 수용
 ### 5.1 분업 모드 턴 단계
 ```
 [Turn N]
-  Phase A0: 상태 정합성 자기점검 (Preflight) [HARD]
+  Phase A0: 상태 정합성 자기점검 + 실행/검증 계획 수립 (Preflight) [HARD]
     구현 시작 전 Implementer가 반드시 수행:
+
+    [1단계: 상태 정합성 자기점검]
       1. open_obligations 재열거 — active(accepted/in_progress) 항목 명시
          ※ Phase A 시점에 proposed 항목이 존재하면 Coordinator 오류 (Phase D에서 미처리)
       2. 지난 턴 obligation_updates 주장 vs 현재 실제 상태 대조
          - "resolved"로 표시한 항목이 실제로 처리됐는가?
          - mismatch 발견 시 구현 전에 명시
       3. 이번 수정 범위가 open_obligations 중 누락하는 항목 없는지 확인
-    mismatch 없으면 한 줄로 통과. mismatch 있으면 구현 전에 드러내고 처리.
+
+    [2단계: 실행 계획 수립]
+      - 이번 턴에서 수행할 작업 단계를 순서대로 열거
+      - 수정 대상 파일 / 모듈 / 함수 명시
+      - 예상 부작용 또는 회귀 위험 지점 사전 식별
+
+    [3단계: 검증 계획 수립]
+      - acceptance_criteria 항목별 대응 테스트 명시
+      - 필수 실행 테스트 목록 (단위/통합/회귀)
+      - 회귀 체크포인트 — 이번 변경이 영향 줄 수 있는 기존 기능 목록
+      - 생략 가능한 테스트가 있다면 사유 사전 명시
+
+    mismatch 없고 계획 수립 완료 시 Phase A 진입.
     결과는 제출 포맷의 preflight 필드에 포함 (Section 6 RULE 4).
 
   Phase A: 구현
@@ -327,6 +347,7 @@ rejected      → Implementer 반박 근거 제시 + Verifier 수용
       - 구현 요약
       - 실제 변경 파일 목록 + diff/patch
       - test_evidence (RULE 4 형식 그대로)
+      - preflight.execution_plan + preflight.verification_plan (계획 대비 이행 확인용)
       - open_obligations 전체 (obligation_id + 현재 상태)
       - VERIFIER HARD RULES 전문 (고정)
       - 이전 FIX_REQUIRED 이력 (issue_id 포함)
@@ -420,7 +441,16 @@ task가 변경될 때 verification_cycles_current_task 리셋
         "reason": "<불일치 사유 또는 확인 근거>"
       }
     ],
-    "all_clear": true
+    "all_clear": true,
+    "execution_plan": [
+      "<작업 단계 1>",
+      "<작업 단계 2>"
+    ],
+    "verification_plan": {
+      "required_checks": ["<acceptance_criteria 항목별 대응 테스트>"],
+      "regression_targets": ["<이번 변경이 영향 줄 수 있는 기존 기능>"],
+      "omitted_checks_reason": "<생략 테스트가 있다면 사유. 없으면 빈 문자열 불가>"
+    }
   },
   "task_summary": "<무엇을 구현했는가 — 1~3문장>",
   "changes": [
@@ -524,9 +554,10 @@ adjacent_files_allowed: 수정 가능하되 changes[]에 scope="adjacent"로 명
 1. 정확성 — 로직 오류, 명세 불일치
 2. 누적 의무 이행 — open_obligations 실제 처리 여부
 3. acceptance_criteria 충족 여부
-4. 회귀 위험 — 기존 기능 파손 가능성
-5. 범위 위반 — scope 외 수정
-6. 그 외 사소한 항목
+4. 검증 계획 이행 여부 — required_checks 실행 여부, omitted_checks_reason 타당성, regression_targets 확인 여부
+5. 회귀 위험 — 기존 기능 파손 가능성
+6. 범위 위반 — scope 외 수정
+7. 그 외 사소한 항목
 
 **절대 금지:**
 - 사소한 문구 차이, 비본질적 형식 문제 지적
@@ -1236,6 +1267,7 @@ FIX_REQUIRED / BLOCKER 판정도 동일한 고정 메커니즘이 적용된다.
 ---
 
 *v0.9 — 2026-04-16*
+*v0.9 → v0.10: Phase A0 실행/검증 계획 수립 단계 추가 (execution_plan, verification_plan, regression_targets), Verifier RULE 6 우선순위 4번에 검증 계획 이행 확인 추가*
 *v0.8 → v0.9: Section 0 추가 — Shared Situation Layer (설계 철학 기반층)*
 *v0.7 → v0.8: Section 7 RULE 7 추가 (Verifier 탐색 범위 3단계), Section 15 양방향 handoff 대칭 고정*
 *v0.6.1 → v0.7: Section 15 제출/검증 대상 고정 메커니즘, Section 16 MVP 범위, Section 17 Batch 재구조화*

@@ -29,11 +29,14 @@
 
 ### 1.2 매 구현 턴 시작 시 주입 (동적)
 ```
-[구현 시작 전 — 반드시 먼저 수행: 상태 정합성 자기점검]
-1. 아래 open_obligations 목록을 직접 열거하고 active 항목을 확인하십시오
+[구현 시작 전 — 반드시 먼저 수행: 상태 정합성 자기점검 + 실행/검증 계획]
+1. open_obligations 목록을 직접 열거하고 active 항목을 확인하십시오
 2. 지난 턴에서 "resolved"로 표시한 항목이 실제로 처리됐는지 대조하십시오
 3. mismatch가 있으면 구현을 시작하기 전에 명시하십시오
-mismatch 없으면 한 줄("preflight 이상 없음")로 통과합니다
+4. 이번 턴 작업 단계를 순서대로 열거하십시오 (execution_plan)
+5. acceptance_criteria 항목별로 어떤 테스트를 돌릴지, 어떤 회귀 지점을 확인할지 명시하십시오 (verification_plan)
+6. 생략하는 테스트가 있다면 사유를 사전에 명시하십시오
+계획 없이 구현 시작 불가. mismatch 없고 계획 완료 시 구현 시작.
 
 [현재 작업 컨텍스트]
 프로젝트 방향: {project_brief}
@@ -45,7 +48,7 @@ mismatch 없으면 한 줄("preflight 이상 없음")로 통과합니다
 {next_required_action}
 
 [반드시 포함해야 할 제출 항목]
-- preflight: open_obligations 재열거 + 지난 턴 주장 대조 결과
+- preflight: open_obligations 재열거 + 지난 턴 주장 대조 결과 + execution_plan + verification_plan
 - changes[]: 수정된 파일, 타입, diff 참조
 - test_evidence: ran 여부, 실행 명령, 결과 요약 (ran=false면 이유 필수)
 - obligation_updates[]: 각 open obligation의 현재 처리 상태
@@ -111,8 +114,12 @@ PASS를 유보할 이유를 억지로 만들지 않습니다.
 1. open_obligations 목록에서 미이행 항목 재열거
 2. 이번 diff에서 닫힌 항목 확인 (요약 불인정, 실제 코드 기준)
 3. 아직 열린 항목 previous_unresolved에 등록
-4. 우선순위 1~5 순서로 신규 이슈 탐색
-5. 판정 결정 및 issue_drafts 구성
+4. preflight.verification_plan 이행 여부 확인
+   - required_checks가 실제로 실행됐는가?
+   - regression_targets가 확인됐는가?
+   - omitted_checks_reason이 타당한가?
+5. 우선순위 1~6 순서로 신규 이슈 탐색
+6. 판정 결정 및 issue_drafts 구성
 
 [검증 대상]
 변경 파일 목록: {changes}
@@ -287,6 +294,7 @@ Verifier 출력에서 아래 항목을 Coordinator가 자동 체크한다.
 | v0.1 | 2026-04-16 | 초기 작성 — DESIGN.md v0.4.1 기준 주입 원문 분리 |
 | v0.2 | 2026-04-16 | Section 5 추가 — Coordinator 사람 중계 출력 절대 금지 규칙 |
 | v0.3 | 2026-04-16 | Section 1.2 수정 — Implementer 턴 시작 시 preflight 자기점검 단계 추가 |
+| v0.5 | 2026-04-16 | Section 1.2 + 2.2 수정 — 실행/검증 계획(execution_plan, verification_plan) 수립 강제, Verifier 절차에 plan 이행 확인 추가 |
 | v0.4 | 2026-04-16 | Section 1.1 수정 — Implementer → Coordinator 제출 → Verifier 전달 흐름 명확화 |
 
 *다음 업데이트: SQLite 스키마 + MCP 도구 목록 확정 후 동적 주입 파라미터 구체화*

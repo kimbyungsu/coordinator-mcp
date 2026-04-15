@@ -440,9 +440,9 @@ adjacent_files_allowed: 수정 가능하되 changes[]에 scope="adjacent"로 명
 
 판정 기준:
 - **PASS**: 아래 조건 전부 충족
-  - active high obligation 없음 (resolved 또는 rejected만)
+  - active high obligation 없음 (resolved만 — rejected 불가)
   - active medium obligation 없음 (resolved 또는 rejected만)
-  - active blocking obligation 없음
+  - active blocking obligation 없음 (resolved만 — rejected 불가)
   - acceptance_criteria 항목 충족
   - low deferred는 `allow_deferred_low_on_pass` 정책에 따라 허용
 - **FIX_REQUIRED**: 수정 가능한 문제 존재, 재구현 후 재검증 필요
@@ -518,12 +518,13 @@ low:
 ### 협의 종료 조건
 ```
 정상 종료:
-  모든 high/blocking → resolved 또는 ESCALATED (타협/rejected 불가)
+  모든 high/blocking → resolved (타협/rejected 불가)
   모든 medium → resolved 또는 rejected (합의)
   remaining issues 전부 deferred (low만)
 
 비정상 종료 (ESCALATED):
-  max_negotiation_turns_per_cycle 초과 + high/blocking 미해결
+  max_negotiation_turns_per_cycle 초과 + high/blocking 미해결 → ESCALATED
+  (ESCALATED는 정상 종료 경로가 아님)
 
 DISCUSSION 모드에서만 forced_compromise 허용.
 PROJECT/SINGLE 모드에서 forced_compromise 생성 불가.
@@ -930,7 +931,7 @@ writer_lock = {
 
 ---
 
-## 15. 미결 설계 항목 (v0.4에서 결정 필요)
+## 15. 미결 설계 항목 (v0.5에서 결정 필요)
 
 1. **에이전트 등록/신원 확인**: agent_id 발급 방식, 인증 방법
 2. **폴링 vs 웹소켓**: 에이전트가 자기 차례를 감지하는 방법
@@ -943,6 +944,6 @@ writer_lock = {
 
 ---
 
-*v0.4 — 2026-04-15*
-*v0.3 → v0.4: active 정의, high/blocking 충돌 수정, PASS 판정식 명문화, cycle 증가 위치 단일화*
-*다음 단계: v0.4 검토 → SQLite 스키마 + MCP 도구 목록*
+*v0.4.1 — 2026-04-16*
+*v0.4 → v0.4.1: Section 7 PASS의 high rejected 잔재 제거, Section 8 ESCALATED를 비정상 종료로 분리, Section 15 버전 표기 수정*
+*다음 단계: SQLite 스키마 + MCP 도구 목록*

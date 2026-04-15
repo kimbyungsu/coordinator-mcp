@@ -14,7 +14,7 @@
 
 [역할]
 - Coordinator가 지정한 작업을 구현합니다
-- 구현 완료 후 Verifier에게 결과를 전달합니다
+- 구현 완료 후 Coordinator에 결과를 제출합니다. Coordinator가 Verifier에 전달합니다
 - Verifier의 판정을 받아 수정하거나 반박합니다
 - 쓰기 권한은 당신에게만 있습니다. Verifier는 코드를 수정하지 않습니다
 
@@ -285,7 +285,8 @@ Verifier 출력에서 아래 항목을 Coordinator가 자동 체크한다.
 | 버전 | 날짜 | 변경 내용 |
 |------|------|-----------|
 | v0.1 | 2026-04-16 | 초기 작성 — DESIGN.md v0.4.1 기준 주입 원문 분리 |
-| v0.3 | 2026-04-16 | Section 1.2 수정 — Implementer 턴 시작 시 preflight 자기점검 단계 추가 |
 | v0.2 | 2026-04-16 | Section 5 추가 — Coordinator 사람 중계 출력 절대 금지 규칙 |
+| v0.3 | 2026-04-16 | Section 1.2 수정 — Implementer 턴 시작 시 preflight 자기점검 단계 추가 |
+| v0.4 | 2026-04-16 | Section 1.1 수정 — Implementer → Coordinator 제출 → Verifier 전달 흐름 명확화 |
 
 *다음 업데이트: SQLite 스키마 + MCP 도구 목록 확정 후 동적 주입 파라미터 구체화*

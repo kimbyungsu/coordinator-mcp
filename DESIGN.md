@@ -1,5 +1,9 @@
-# Multi-Agent Coordination MCP — 설계 문서 v0.6
+# Multi-Agent Coordination MCP — 설계 문서 v0.6.1
 
+> v0.6 → v0.6.1 주요 변경
+> - Phase A0 active 범위 통일: proposed 제거, accepted/in_progress만 명시
+>   (Phase A 시점 proposed 존재 = Coordinator 오류로 정의)
+>
 > v0.5 → v0.6 주요 변경
 > - Phase A0 추가: Implementer 턴 시작 시 상태 정합성 자기점검 (Preflight) [HARD]
 >   - open_obligations 재열거, 지난 턴 주장 vs 실제 상태 대조, mismatch 구현 전 명시
@@ -222,7 +226,8 @@ rejected      → Implementer 반박 근거 제시 + Verifier 수용
 [Turn N]
   Phase A0: 상태 정합성 자기점검 (Preflight) [HARD]
     구현 시작 전 Implementer가 반드시 수행:
-      1. open_obligations 재열거 — active(proposed/accepted/in_progress) 항목 명시
+      1. open_obligations 재열거 — active(accepted/in_progress) 항목 명시
+         ※ Phase A 시점에 proposed 항목이 존재하면 Coordinator 오류 (Phase D에서 미처리)
       2. 지난 턴 obligation_updates 주장 vs 현재 실제 상태 대조
          - "resolved"로 표시한 항목이 실제로 처리됐는가?
          - mismatch 발견 시 구현 전에 명시
